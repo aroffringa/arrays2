@@ -28,8 +28,6 @@
 #include "../ArrayIO.h"
 #include "../Vector.h"
 
-#include <casacore/casa/Exceptions/Error.h>
-
 #include <boost/test/unit_test.hpp>
 
 #include <sstream>

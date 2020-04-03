@@ -12,7 +12,7 @@ namespace array2 {
 // It holds the same functionality as a normal array, but enables allocation
 // through different allocators.
 template<typename T, typename Alloc>
-class Storage : private Alloc
+class Storage : public Alloc
 {
 public:
   Storage() :
@@ -67,9 +67,12 @@ public:
   
   ~Storage() noexcept
   {
-    for(size_t i=0; i!=size(); ++i)
-      _data[size()-i-1].~T();
-    Alloc::deallocate(_data, size());
+    if(size())
+    {
+      for(size_t i=0; i!=size(); ++i)
+        _data[size()-i-1].~T();
+      Alloc::deallocate(_data, size());
+    }
   }
   
   Storage& operator=(const Storage&) = delete;

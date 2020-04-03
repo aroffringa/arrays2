@@ -28,7 +28,6 @@
 #ifndef CASA_MASKARRMATH_2_H
 #define CASA_MASKARRMATH_2_H
 
-#include <casacore/casa/BasicMath/Math.h>
 #include "Array.h"
 #include "MaskedArray.h"
 #include "IPosition.h"

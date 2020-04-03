@@ -30,14 +30,12 @@
 
 #include "ArrayLogical.h"
 #include "MaskArrMath.h"
-#include <casacore/casa/BasicMath/Math.h>
 #include "Array.h"
 #include "ArrayError.h"
 #include "ArrayIter.h"
 #include "VectorIter.h"
-#include <casacore/casa/Utilities/GenSort.h>
-#include <casacore/casa/Utilities/Assert.h>
-#include <casacore/casa/Exceptions/Error.h>
+
+#include <algorithm>
 
 namespace casacore { //# NAMESPACE CASACORE - BEGIN
 namespace array2 {
@@ -488,7 +486,7 @@ MaskedArray<T> pow (const MaskedArray<T> &left, const Array<U> &right)
     size_t ntotal = result.nelements();
     while (ntotal--) {
         if (*resultmaskS) {
-	    *resultarrS = pow (*resultarrS, *rightS);
+	    *resultarrS = std::pow (*resultarrS, *rightS);
         }
         resultarrS++;
         resultmaskS++;
@@ -532,7 +530,7 @@ MaskedArray<T> pow (const Array<T> &left, const MaskedArray<U> &right)
     size_t ntotal = result.nelements();
     while (ntotal--) {
         if (*resultmaskS) {
-	    *resultarrS = pow (*resultarrS, *rightarrS);
+	    *resultarrS = std::pow (*resultarrS, *rightarrS);
         }
         resultarrS++;
         resultmaskS++;
@@ -577,7 +575,7 @@ MaskedArray<T> pow (const MaskedArray<T> &left, const MaskedArray<U> &right)
     size_t ntotal = result.nelements();
     while (ntotal--) {
         if (*resultmaskS) {
-	    *resultarrS = pow (*resultarrS, *rightarrS);
+	    *resultarrS = std::pow (*resultarrS, *rightarrS);
         }
         resultarrS++;
         resultmaskS++;
@@ -609,7 +607,7 @@ MaskedArray<T> pow (const MaskedArray<T> &left, const double &right)
     size_t ntotal = result.nelements();
     while (ntotal--) {
         if (*resultmaskS) {
-	    *resultarrS = pow (*resultarrS, right);
+	    *resultarrS = std::pow (*resultarrS, right);
         }
         resultarrS++;
         resultmaskS++;
@@ -621,10 +619,9 @@ MaskedArray<T> pow (const MaskedArray<T> &left, const double &right)
     return result;
 }
 
-
-#define MARRM_FUNC_M(FUNC,STRFUNC) \
+#define MARRM_FUNC_M(DEFNAME, FUNC) \
 template<class T> \
-MaskedArray<T> FUNC (const MaskedArray<T> &left) \
+MaskedArray<T> DEFNAME (const MaskedArray<T> &left) \
 { \
     MaskedArray<T> result (left.copy()); \
 \
@@ -653,9 +650,9 @@ MaskedArray<T> FUNC (const MaskedArray<T> &left) \
 }
 
 
-#define MARRM_FUNC_MA(FUNC,STRFUNC) \
+#define MARRM_FUNC_MA(DEFNAME,FUNC,STRFUNC) \
 template<class T> \
-MaskedArray<T> FUNC (const MaskedArray<T> &left, const Array<T> &right) \
+MaskedArray<T> DEFNAME (const MaskedArray<T> &left, const Array<T> &right) \
 { \
     if (left.conform(right) == false) { \
 	throw (ArrayConformanceError \
@@ -697,9 +694,9 @@ MaskedArray<T> FUNC (const MaskedArray<T> &left, const Array<T> &right) \
 }
 
 
-#define MARRM_FUNC_AM(FUNC,STRFUNC) \
+#define MARRM_FUNC_AM(DEFNAME, FUNC,STRFUNC) \
 template<class T> \
-MaskedArray<T> FUNC (const Array<T> &left, const MaskedArray<T> &right) \
+MaskedArray<T> DEFNAME (const Array<T> &left, const MaskedArray<T> &right) \
 { \
     if (left.conform(right) == false) { \
 	throw (ArrayConformanceError \
@@ -741,9 +738,9 @@ MaskedArray<T> FUNC (const Array<T> &left, const MaskedArray<T> &right) \
 }
 
 
-#define MARRM_FUNC_MM(FUNC,STRFUNC) \
+#define MARRM_FUNC_MM(DEFNAME, FUNC,STRFUNC) \
 template<class T> \
-MaskedArray<T> FUNC (const MaskedArray<T> &left, \
+MaskedArray<T> DEFNAME (const MaskedArray<T> &left, \
                      const MaskedArray<T> &right) \
 { \
     if (left.conform(right) == false) { \
@@ -787,9 +784,9 @@ MaskedArray<T> FUNC (const MaskedArray<T> &left, \
 }
 
 
-#define MARRM_FUNC_MS(FUNC) \
+#define MARRM_FUNC_MS(DEFNAME, FUNC) \
 template<class T> \
-MaskedArray<T> FUNC (const MaskedArray<T> &left, const T &right) \
+MaskedArray<T> DEFNAME (const MaskedArray<T> &left, const T &right) \
 { \
     MaskedArray<T> result (left.copy()); \
 \
@@ -818,9 +815,9 @@ MaskedArray<T> FUNC (const MaskedArray<T> &left, const T &right) \
 }
 
 
-#define MARRM_FUNC_SM(FUNC) \
+#define MARRM_FUNC_SM(DEFNAME, FUNC) \
 template<class T> \
-MaskedArray<T> FUNC (const T &left, const MaskedArray<T> &right) \
+MaskedArray<T> DEFNAME (const T &left, const MaskedArray<T> &right) \
 { \
     Array<T> resultarray (right.shape()); \
     resultarray = left; \
@@ -858,38 +855,38 @@ MaskedArray<T> FUNC (const T &left, const MaskedArray<T> &right) \
 }
 
 
-MARRM_FUNC_M ( sin, "sin" )
-MARRM_FUNC_M ( cos, "cos" )
-MARRM_FUNC_M ( tan, "tan" )
-MARRM_FUNC_M ( asin, "asin" )
-MARRM_FUNC_M ( acos, "acos" )
-MARRM_FUNC_M ( atan, "atan" )
-MARRM_FUNC_M ( sinh, "sinh" )
-MARRM_FUNC_M ( cosh, "cosh" )
-MARRM_FUNC_M ( tanh, "tanh" )
-MARRM_FUNC_M ( exp, "exp" )
-MARRM_FUNC_M ( log, "log" )
-MARRM_FUNC_M ( log10, "log10" )
-MARRM_FUNC_M ( sqrt, "sqrt" )
-MARRM_FUNC_M ( abs, "abs" )
-MARRM_FUNC_M ( fabs, "fabs" )
-MARRM_FUNC_M ( ceil, "ceil" )
-MARRM_FUNC_M ( floor, "floor" )
+MARRM_FUNC_M ( sin, std::sin )
+MARRM_FUNC_M ( cos, std::cos )
+MARRM_FUNC_M ( tan, std::tan )
+MARRM_FUNC_M ( asin, std::sin )
+MARRM_FUNC_M ( acos, std::acos )
+MARRM_FUNC_M ( atan, std::atan )
+MARRM_FUNC_M ( sinh, std::sinh )
+MARRM_FUNC_M ( cosh, std::cosh )
+MARRM_FUNC_M ( tanh, std::tanh )
+MARRM_FUNC_M ( exp, std::exp )
+MARRM_FUNC_M ( log, std::log )
+MARRM_FUNC_M ( log10, std::log10 )
+MARRM_FUNC_M ( sqrt, std::sqrt )
+MARRM_FUNC_M ( abs, std::abs )
+MARRM_FUNC_M ( fabs, std::fabs )
+MARRM_FUNC_M ( ceil, std::ceil )
+MARRM_FUNC_M ( floor, std::floor )
 
-MARRM_FUNC_MA ( atan2, "atan2" )
-MARRM_FUNC_MA ( fmod, "fmod" )
+MARRM_FUNC_MA ( atan2, std::atan2, "atan2" )
+MARRM_FUNC_MA ( fmod, std::fmod, "fmod" )
 
-MARRM_FUNC_AM ( atan2, "atan2" )
-MARRM_FUNC_AM ( fmod, "fmod" )
+MARRM_FUNC_AM ( atan2, std::atan2, "atan2" )
+MARRM_FUNC_AM ( fmod, std::fmod, "fmod" )
 
-MARRM_FUNC_MM ( atan2, "atan2" )
-MARRM_FUNC_MM ( fmod, "fmod" )
+MARRM_FUNC_MM ( atan2, std::atan2, "atan2" )
+MARRM_FUNC_MM ( fmod, std::fmod, "fmod" )
 
-MARRM_FUNC_MS ( atan2 )
-MARRM_FUNC_MS ( fmod )
+MARRM_FUNC_MS ( atan2, std::atan2 )
+MARRM_FUNC_MS ( fmod, std::fmod )
 
-MARRM_FUNC_SM ( atan2 )
-MARRM_FUNC_SM ( fmod )
+MARRM_FUNC_SM ( atan2, std::atan2 )
+MARRM_FUNC_SM ( fmod, std::fmod )
 
 
 template<class T>
@@ -1446,7 +1443,7 @@ template<class T> T pvariance(const MaskedArray<T> &a, T mean, size_t ddof)
   size_t nr = a.nelementsValid();
   if (nr < ddof+1) {
     throw(ArrayError("::variance(const MaskedArray<T> &) - Need at least " +
-                     String::toString(ddof+1) + 
+                     std::to_string(ddof+1) + 
                      " unmasked elements"));
   }
   MaskedArray<T> deviations (abs(a - mean));    // abs is needed for Complex
@@ -1473,10 +1470,10 @@ template<class T> T pstddev(const MaskedArray<T> &a, T mean, size_t ddof)
 {
   if (a.nelements() < ddof+1) {
     throw(ArrayError("::stddev(const Array<T> &) - Need at least " +
-                     String::toString(ddof+1) + 
+                     std::to_string(ddof+1) + 
                      " unmasked elements"));
   }
-  return sqrt(pvariance(a, mean, ddof));
+  return std::sqrt(pvariance(a, mean, ddof));
 }
 template<class T> T stddev(const MaskedArray<T> &a, T mean)
 {
@@ -1513,98 +1510,88 @@ template<class T> T rms(const MaskedArray<T> &left)
         throw (ArrayError("T ::rms(const MaskedArray<T> &left) - "
                           "Need at least 1 unmasked element"));
     }
-    return T(sqrt(sumsquares(left)/(1.0*left.nelementsValid())));
+    return T(std::sqrt(sumsquares(left)/(1.0*left.nelementsValid())));
 }
 
 template<class T> T median(const MaskedArray<T> &left, bool sorted,
 			   bool takeEvenMean)
 {
-    size_t nelem = left.nelementsValid();
-    if (nelem < 1) {
-        throw (ArrayError("T ::median(const MaskedArray<T> &) - "
-                          "Need at least 1 unmasked element"));
+  size_t nelem = left.nelementsValid();
+  if (nelem < 1) {
+    throw (ArrayError("T ::median(const MaskedArray<T> &) - "
+    "Need at least 1 unmasked element"));
+  }
+  //# Mean does not have to be taken for odd number of elements.
+  if (nelem%2 != 0) {
+    takeEvenMean = false;
+  }
+  T medval;
+  
+  bool leftarrDelete;
+  const T *leftarrStorage = left.getArrayStorage(leftarrDelete);
+  const T *leftarrS = leftarrStorage;
+  
+  bool leftmaskDelete;
+  const LogicalArrayElem *leftmaskStorage
+  = left.getMaskStorage(leftmaskDelete);
+  const LogicalArrayElem *leftmaskS = leftmaskStorage;
+  
+  size_t n2 = (nelem - 1)/2;
+  
+  if (! sorted) {
+    // Make a copy of the masked elements.
+    
+    std::unique_ptr<T[]> copy(new T[nelem]);
+    T *copyS = copy.get();
+    
+    size_t ntotal = nelem;
+    while (ntotal) {
+      if (*leftmaskS) {
+        *copyS = *leftarrS;
+        copyS++;
+        ntotal--;
+      }
+      leftarrS++;
+      leftmaskS++;
     }
-    //# Mean does not have to be taken for odd number of elements.
-    if (nelem%2 != 0) {
-	takeEvenMean = false;
-    }
-    T medval;
-
-    bool leftarrDelete;
-    const T *leftarrStorage = left.getArrayStorage(leftarrDelete);
-    const T *leftarrS = leftarrStorage;
-
-    bool leftmaskDelete;
-    const LogicalArrayElem *leftmaskStorage
-        = left.getMaskStorage(leftmaskDelete);
-    const LogicalArrayElem *leftmaskS = leftmaskStorage;
-
-    size_t n2 = (nelem - 1)/2;
-
-    if (! sorted) {
-	// Make a copy of the masked elements.
-
-	T *copy = new T[nelem];
-        T *copyS = copy;
-
-        size_t ntotal = nelem;
-        while (ntotal) {
-            if (*leftmaskS) {
-                *copyS = *leftarrS;
-                copyS++;
-                ntotal--;
-            }
-            leftarrS++;
-            leftmaskS++;
-        }
-
-	// Use a faster algorithm when the array is big enough.
-	// If needed take the mean for an even number of elements.
-	// Sort a small array in ascending order.
-	if (nelem > 50) {
-	    if (takeEvenMean) {
-		medval = T(0.5 * (GenSort<T>::kthLargest (copy, nelem, n2) +
-				  GenSort<T>::kthLargest (copy, nelem, n2+1)));
-	    } else {
-		medval = GenSort<T>::kthLargest (copy, nelem, n2);
-	    }
-	} else {
-	    GenSort<T>::sort (copy, nelem);
-	    if (takeEvenMean) {
-		medval = T(0.5 * (copy[n2] + copy[n2+1]));
-	    } else {
-		medval = copy[n2];
-	    }
-	}
-	delete [] copy;
-
+    
+    std::nth_element(&copy[0], &copy[n2], &copy[nelem]);
+    if (takeEvenMean) {
+      T a = copy[n2];
+      std::nth_element(&copy[0], &copy[n2+1], &copy[nelem]);
+      medval = T(0.5 * (a + copy[n2+1]));
     } else {
-        // Sorted.
-	// When mean has to be taken, we need one more element.
-        if (takeEvenMean) {
-	    n2++;
-	}
-	const T* prev = 0;
-	for (;;) {
-	    if (*leftmaskS) {
-		if (n2 == 0) break;
-		prev = leftarrS;
-		n2--;
-	    }
-	    leftarrS++;
-	    leftmaskS++;
-	}
-        if (takeEvenMean) {
-            medval = T(0.5 * (*prev + *leftarrS));
-        } else {
-            medval = *leftarrS;
-        }
+      medval = copy[n2];
     }
-
-    left.freeArrayStorage(leftarrStorage, leftarrDelete);
-    left.freeMaskStorage(leftmaskStorage, leftmaskDelete);
-
-    return medval;
+    copy.reset();
+    
+  } else {
+    // Sorted.
+    // When mean has to be taken, we need one more element.
+    if (takeEvenMean) {
+      n2++;
+    }
+    const T* prev = 0;
+    for (;;) {
+      if (*leftmaskS) {
+        if (n2 == 0) break;
+        prev = leftarrS;
+        n2--;
+      }
+      leftarrS++;
+      leftmaskS++;
+    }
+    if (takeEvenMean) {
+      medval = T(0.5 * (*prev + *leftarrS));
+    } else {
+      medval = *leftarrS;
+    }
+  }
+  
+  left.freeArrayStorage(leftarrStorage, leftarrDelete);
+  left.freeMaskStorage(leftmaskStorage, leftmaskDelete);
+  
+  return medval;
 }
 
 template<class T> T madfm(const MaskedArray<T> &a, bool sorted,
@@ -1771,7 +1758,7 @@ Array<T> slidingArrayMath (const MaskedArray<T>& array,
   // Need to make shallow copy because operator() is non-const.
   MaskedArray<T> arr (array);
   Array<T> result (resShape);
-  DebugAssert (result.contiguousStorage(), AipsError);
+  assert (result.contiguousStorage() );
   T* res = result.data();
   // Loop through all data and assemble as needed.
   IPosition blc(ndim, 0);
@@ -1800,7 +1787,7 @@ Array<T> slidingArrayMath (const MaskedArray<T>& array,
   Array<T> fullResult(shape);
   fullResult = T();
   hboxsz /= 2;
-  fullResult(hboxsz, resShape+hboxsz-1) = result;
+  fullResult(hboxsz, resShape+hboxsz-1).assign_conforming( result );
   return fullResult;
 }
 

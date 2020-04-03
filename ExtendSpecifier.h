@@ -147,7 +147,7 @@ public:
 private:
   // Fill the flags for the given axes.
   // It throws an exception if the axis is invalid or multiply given.
-  void fill (Block<bool>& flags, const IPosition& axes) const;
+  void fill (bool* flags, size_t nrdim, const IPosition& axes) const;
 
 
   IPosition itsOldShape;

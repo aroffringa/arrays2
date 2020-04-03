@@ -144,20 +144,18 @@ public:
 	       ssize_t val6=MIN_INT, ssize_t val7=MIN_INT, ssize_t val8=MIN_INT,
 	       ssize_t val9=MIN_INT);
 
-    // Makes a copy (copy, NOT reference, semantics) of other.
-    IPosition(const IPosition& other);
+    // Makes a copy (copy, NOT reference, semantics) of source.
+    IPosition(const IPosition& source);
     
     IPosition(IPosition&& source) noexcept;
     
     ~IPosition();
 
-    // Makes this a copy of other. "this" and "other" must either be conformant
-    // (same size) or this must be 0-length, in which case it will
-    // resize itself to be the same length as other.
-    // TODO should not have to be conformant
-    IPosition& operator=(const IPosition& other);
+    // Makes this a copy of other. When the dest is not of the same
+    // size, it will resize itself to be the same length as the source.
+    IPosition& operator=(const IPosition& source);
 
-    IPosition& operator=(IPosition&& other);
+    IPosition& operator=(IPosition&& source);
     
     // Copy "value" into every position of this IPosition.
     IPosition& operator=(ssize_t value);

@@ -23,7 +23,11 @@ add_library(array2-object OBJECT
   ArrayUtil2.cc
   AxesMapping.cc
   AxesSpecifier.cc
+  ExtendSpecifier.cc
   IPosition.cc
+  IPosition2.cc
+  MaskArrMath2.cc
+  Matrix2Math.cc
   Matrix_tmpl.cc
   Slice.cc
   Slicer.cc
@@ -31,6 +35,7 @@ add_library(array2-object OBJECT
 set(ARRAY2FILES $<TARGET_OBJECTS:array2-object>)
 
 add_executable(tArray2
+  test/tAllocator.cc
   test/tArray.cc
   test/tArrayAccessor.cc
   test/tArrayBase.cc
@@ -44,16 +49,31 @@ add_executable(tArray2
   test/tArrayMath.cc
   test/tArrayMathTransform.cc
   test/tArrayOpsDiffShapes.cc
-#  test/tArrayPartMath.cc # it's so slow!
+  test/tArrayPartMath.cc # it's so slow!
   test/tArrayPosIter.cc
   test/tArrayUtil.cc
   test/tAxesSpecifier.cc
   test/tBoxedArrayMath.cc
   test/tConvertArray.cc
   test/tCpp11Features.cc
+  test/tDiagonal.cc
+  test/tExtendSpecifier.cc
+  test/tIPosition.cc
+  test/tMaskArrExcp.cc
+  test/tMaskArrIO.cc
+  test/tMaskArrLogi.cc
+  test/tMaskArrMath0.cc
+  test/tMaskArrMath1.cc
+  test/tMaskArrMath2.cc
+  test/tMaskedArray.cc
+  test/tMatrixMath.cc
+  test/tMedianSmooth.cc
   test/tSlice.cc
+  test/tSlicer.cc
+  test/tSlidingArrayMath.cc
   test/tStringArray.cc
   test/tVector.cc
+  test/tVectorSTLIterator.cc
   ${ARRAY2FILES})
 target_link_libraries(tArray2 ${CASACORE_LIBRARIES} ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY} ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY})
 

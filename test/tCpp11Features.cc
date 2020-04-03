@@ -1,3 +1,5 @@
+#include "../Array.h"
+#include "../ArrayIO.h"
 #include "../Slice.h"
 #include "../Slicer.h"
 #include "../Vector.h"
@@ -66,6 +68,20 @@ BOOST_AUTO_TEST_CASE( ip_move_assignment )
   ip4 = std::move(ip3);
   checkLarge(ip4);
   checkEmpty(ip3);
+  
+  ip4 = std::move(ip2);
+  checkSmall(ip4);
+  checkEmpty(ip2);
+}
+
+BOOST_AUTO_TEST_CASE( ip_non_conforming_copy_assignment )
+{
+  // Since the 2020 changes, this should no longer throw.
+  IPosition ip1{2, 3};
+  IPosition ip2{2, 3, 4, 5, 6, 7};
+  ip1 = ip2; // normal copy assignment
+  checkLarge(ip1);
+  checkLarge(ip2);
 }
 
 BOOST_AUTO_TEST_CASE( array_move_constructor )
@@ -142,6 +158,56 @@ BOOST_AUTO_TEST_CASE( vector_can_hold_noncopyable_objects )
   c.reference(b);
   BOOST_CHECK_EQUAL(*c[1], 42);
   BOOST_CHECK_THROW(a.assign(b), ArrayError);
+}
+
+BOOST_AUTO_TEST_CASE( array_to_string )
+{
+  Array<int> a(IPosition{2, 3}, 2);
+  a(IPosition{0, 1}) = 1;
+  BOOST_CHECK_EQUAL(to_string(a),
+    "Axis Lengths: [2, 3]  (NB: Matrix in Row/Column order)\n"
+    "[2, 1, 2\n"
+    " 2, 2, 2]\n");
+}
+
+BOOST_AUTO_TEST_CASE( masked_array_move_constructor )
+{
+  Array<int> arr(IPosition{2, 3}, 37);
+  LogicalArray mask(IPosition{2, 3}, false);
+  mask(IPosition{0, 1}) = true;
+  MaskedArray<int> ma1(arr, mask);
+  MaskedArray<int> ma2(std::move(ma1));
+
+  std::vector<int> arrReference{37, 37, 37, 37, 37, 37};
+  BOOST_CHECK_EQUAL_COLLECTIONS(ma2.getArray().begin(), ma2.getArray().end(), arrReference.begin(), arrReference.end());
+  
+  std::vector<bool> maskReference{false, false, true, false, false, false};
+  BOOST_CHECK_EQUAL_COLLECTIONS(ma2.getMask().begin(), ma2.getMask().end(), maskReference.begin(), maskReference.end());
+}
+
+BOOST_AUTO_TEST_CASE( masked_array_move_assignment )
+{
+  Array<int> arr(IPosition{2, 3}, 37);
+  LogicalArray mask(IPosition{2, 3}, false);
+  mask(IPosition{0, 1}) = true;
+  MaskedArray<int> ma1(arr, mask), ma2, ma3;
+  ma2 = ma1;
+  ma3 = std::move(ma1);
+
+  BOOST_CHECK_EQUAL_COLLECTIONS(ma2.getArray().begin(), ma2.getArray().end(), ma3.getArray().begin(), ma3.getArray().end());
+  BOOST_CHECK_EQUAL_COLLECTIONS(ma2.getMask().begin(), ma2.getMask().end(), ma3.getMask().begin(), ma3.getMask().end());
+}
+
+BOOST_AUTO_TEST_CASE( masked_array_assign_rvalue_array )
+{
+  MaskedArray<int> ma;
+  IPosition ip{2, 3};
+  ma = Array<int>(ip, 37);
+  BOOST_CHECK_EQUAL(ma.shape(), ip);
+  for(size_t i=0; i!=6; ++i) {
+    BOOST_CHECK_EQUAL(ma.getArray()(IPosition(2, i/3, i%3)), 37);
+    BOOST_CHECK_EQUAL(ma.getMask()(IPosition(2, i/3, i%3)), true);
+  }
 }
 
 BOOST_AUTO_TEST_SUITE_END()

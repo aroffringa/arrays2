@@ -231,21 +231,18 @@ void IPosition::resize (size_t newSize, bool copy)
 // </thrown>
 IPosition& IPosition::operator= (const IPosition& other)
 {
-    assert(ok());
-    if (&other == this) {
-	return *this;
-    }
-    if (size_p == 0) {
-	this->resize (other.nelements(), false);
-    } else if (! conform(other)) {
-	throw(ArrayConformanceError("IPosition::operator=(const IPosition&  - "
-				    "this and other differ in length"));
-    }
-    for (size_t i=0; i<size_p; i++) {
-	data_p[i] = other.data_p[i];
-    }
-    assert(ok());
+  assert(ok());
+  if (&other == this) {
     return *this;
+  }
+  if (size_p != other.size_p) {
+    resize (other.nelements(), false);
+  }
+  for (size_t i=0; i<size_p; i++) {
+    data_p[i] = other.data_p[i];
+  }
+  assert(ok());
+  return *this;
 }
 
 IPosition& IPosition::operator=(IPosition&& source)
@@ -1076,10 +1073,12 @@ std::ostream& operator<< (std::ostream& os, const IPosition& ip)
 
 bool IPosition::ok() const
 {
-    bool retval = true;
-    if (size_p <= BufferLength && data_p != &buffer_p[0]) { retval = false; }
-    if (data_p == 0) { retval = false; }
-    return retval;
+  assert(size_p > BufferLength || data_p == &buffer_p[0]);
+  assert(data_p != nullptr);
+  bool retval = true;
+  if (size_p <= BufferLength && data_p != &buffer_p[0]) { retval = false; }
+  if (data_p == nullptr) { retval = false; }
+  return retval;
 }
 
 

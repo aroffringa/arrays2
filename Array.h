@@ -43,20 +43,11 @@
 #include <type_traits>
 
 namespace casacore { //#Begin casa namespace
-
 namespace array2 {
-
-//# Forward Declarations
-class Slice;
-class Slicer;
-template<class T> class ArrayIterator;
-template<class T> class MaskedArray;
-//template <class T, class U> class vector; 
-
 
 // <summary> A templated N-D Array class with zero origin </summary>
 
-// Array<T> is a templated, N-dimensional, Array class. The origin is zero,
+// Array<T, Alloc> is a templated, N-dimensional, Array class. The origin is zero,
 // but by default indices are zero-based. This Array class is the
 // base class for specialized Vector<T>, Matrix<T>, and Cube<T> classes.
 //
@@ -143,7 +134,7 @@ template<class T> class MaskedArray;
 // Element by element mathematical and logical operations are available
 // for arrays (defined in aips/ArrayMath.h and aips/ArrayLogical.h).
 // Because arithmetic and logical functions are split out, it is possible
-// to create an Array<T> (and hence Vector<T> etc) for any type T that has
+// to create an Array<T, Alloc> (and hence Vector<T> etc) for any type T that has
 // a default constructor, assignment operator, and copy constructor. In
 // particular, Array<String> works.
 //
@@ -163,13 +154,11 @@ template<class T> class MaskedArray;
 //        base class.
 // </todo>
 
-template<typename T, typename Alloc> class Array : public ArrayBase, private Alloc
+template<typename T, typename Alloc> class Array : public ArrayBase
 {
 public:
-
     // Result has dimensionality of zero, and  nelements is zero.
-    // Storage will be allocated by <src>DefaultAllocator<T></src>.
-    Array();
+    Array(const Alloc& allocator = Alloc());
 
     // Create an array of the given shape, i.e. after construction
     // array.ndim() == shape.nelements() and array.shape() == shape.
@@ -182,7 +171,7 @@ public:
     // Especially when <src>T</src> is of type <src>Complex</src> or <src>DComplex</src> and it is unnecessary to initialize,
     // provide initPolicy with value <src>NO_INIT</src> to skip the initialization.
     // Therefore, it is strongly recommended to explicitly provide initPolicy parameter,
-    explicit Array(const IPosition &shape);
+    explicit Array(const IPosition &shape, const Alloc& allocator = Alloc());
 
     // Create an array of the given shape, i.e. after construction
     // array.ndim() == shape.nelements() and array.shape() == shape.
@@ -201,7 +190,7 @@ public:
     // Create an array of the given shape and initialize it with the
     // initial value.
     // Storage is allocated by <src>DefaultAllocator<T></src>.
-    Array(const IPosition &shape, const T &initialValue);
+    Array(const IPosition &shape, const T &initialValue, const Alloc& allocator = Alloc());
     
     Array(std::initializer_list<T> list);
 
@@ -251,6 +240,9 @@ public:
     // Make an empty array of the same template type.
     virtual std::unique_ptr<ArrayBase> makeArray() const override;
 
+    Alloc& allocator() { return *data_p; }
+    const Alloc& allocator() const { return *data_p; }
+    
     // Assign the other array to this array.
     // If the shapes mismatch, this array is resized.
     // <group>
@@ -339,7 +331,7 @@ public:
     // be deprecated and removed?)
     //
     // TODO deprecate
-    Array<T> copy() const {                         // Make a copy of this
+    Array<T, Alloc> copy() const {                         // Make a copy of this
       return copy(Alloc());
     }
     
@@ -477,11 +469,11 @@ public:
     // in a correct number of axes.
     // </note>
     // <group>
-    Array<T> nonDegenerate(size_t startingAxis=0, bool throwIfError=true) const;
-    Array<T> nonDegenerate(const IPosition& ignoreAxes) const;
-    void nonDegenerate(const Array<T> &other, size_t startingAxis=0,
+    Array<T, Alloc> nonDegenerate(size_t startingAxis=0, bool throwIfError=true) const;
+    Array<T, Alloc> nonDegenerate(const IPosition& ignoreAxes) const;
+    void nonDegenerate(const Array<T, Alloc> &other, size_t startingAxis=0,
 		       bool throwIfError=true);
-    void nonDegenerate(const Array<T> &other, const IPosition &ignoreAxes)
+    void nonDegenerate(const Array<T, Alloc> &other, const IPosition &ignoreAxes)
         { doNonDegenerate (other, ignoreAxes); }
     // </group> 
 
@@ -499,8 +491,8 @@ public:
     // Array. Note that the <src>reform</src> function can also be
     // used to add extra axes.
     // <group>
-    const Array<T> addDegenerate(size_t numAxes) const;
-    Array<T> addDegenerate(size_t numAxes);
+    const Array<T, Alloc> addDegenerate(size_t numAxes) const;
+    Array<T, Alloc> addDegenerate(size_t numAxes);
     // </group>
 
     // Make this array a different shape. If <src>copyValues==true</src>
@@ -600,7 +592,7 @@ public:
 
     // Are the shapes identical?
     // <group>
-    bool conform (const Array<T> &other) const
+    bool conform (const Array<T, Alloc> &other) const
       { return conform2(other); }
     bool conform (const MaskedArray<T> &other) const;
     // </group>
@@ -639,7 +631,7 @@ public:
     const T *getStorage(bool& deleteIt) const
     {
       // The cast is OK because the return pointer will be cast to const
-      return const_cast<Array<T>*>(this)->getStorage(deleteIt);
+      return const_cast<Array<T, Alloc>*>(this)->getStorage(deleteIt);
     }
     void *getVStorage(bool &deleteIt) override;
     const void *getVStorage(bool &deleteIt) const override;
@@ -694,14 +686,10 @@ public:
 
     // Used to iterate through Arrays. Derived classes VectorIterator and
     // MatrixIterator are probably more useful.
-    friend class ArrayIterator<T>;
+    friend class ArrayIterator<T, Alloc>;
 
     // Create an ArrayIterator object of the correct type.
     std::unique_ptr<ArrayPositionIterator> makeIterator(size_t byDim) const override;
-
-    // Needed to be a friend for Matrix<T>::reference()
-    friend class Matrix<T>;
-
 
     // <group name=STL-iterator>
     // See the function begin() and end() for a detailed description
@@ -710,7 +698,7 @@ public:
     {
     public:
       // Create the begin const_iterator object for an Array.
-      explicit BaseIteratorSTL (const Array<T>&);
+      explicit BaseIteratorSTL (const Array<T, Alloc>&);
       // Create the end const_iterator object for an Array.
       // It also acts as the default constructor.
       explicit BaseIteratorSTL (const T* end = 0)
@@ -753,7 +741,7 @@ public:
       size_t      itsLineAxis;
       IPosition itsCurPos;
       IPosition itsLastPos;
-      const Array<T>* itsArray; 
+      const Array<T, Alloc>* itsArray; 
       bool      itsContig;
     };
 
@@ -770,7 +758,7 @@ public:
       // </group>
 
       // Create the begin iterator object for an Array.
-      explicit IteratorSTL (Array<T>& arr)
+      explicit IteratorSTL (Array<T, Alloc>& arr)
 	: BaseIteratorSTL (arr) {}
       // Create the end iterator object for an Array.
       // It also acts as the default constructor.
@@ -808,7 +796,7 @@ public:
       // </group>
 
       // Create the begin const_iterator object for an Array.
-      explicit ConstIteratorSTL (const Array<T>& arr)
+      explicit ConstIteratorSTL (const Array<T, Alloc>& arr)
 	: BaseIteratorSTL (arr) {}
       // Create the end const_iterator object for an Array.
       // It also acts as the default constructor.
@@ -864,7 +852,17 @@ public:
     // <group name=iterator-typedefs>
     // STL-style typedefs.
     // <group>
+    
+    // Type of allocator used to allocate and deallocate space
+    typedef Alloc allocator_type;
+    // Element type
     typedef T                value_type;
+    // TODO This is how std containers define a reference type, but
+    // the name 'reference' is already taken by a method.
+    // typedef T&       reference;
+    typedef const T& const_reference;
+    typedef T* pointer;
+    typedef const T* const_pointer;
     typedef IteratorSTL      iterator;
     typedef ConstIteratorSTL const_iterator;
     typedef T*               contiter;
@@ -898,9 +896,6 @@ public:
 
 
 private:
-    Array(const Alloc& allocator);
-    Array(const IPosition &shape, const Alloc& allocator);
-
     // Makes a copy using the allocator.
     Array<T, Alloc> copy(const Alloc& allocator) const;
 
@@ -970,7 +965,7 @@ protected:
     // This is the implementation of the nonDegenerate functions.
     // It has a different name to be able to make it virtual without having
     // the "hide virtual function" message when compiling derived classes.
-    virtual void doNonDegenerate(const Array<T> &other,
+    virtual void doNonDegenerate(const Array<T, Alloc> &other,
                                  const IPosition &ignoreAxes);
 
 

@@ -32,7 +32,6 @@
 //# Includes
 #include "ArrayFwd.h"
 #include "IPosition.h"
-#include "LogiArrayFwd.h"
 #include "MaskLogiArrFwd.h"
 
 namespace casacore { //# NAMESPACE CASACORE - BEGIN
@@ -321,10 +320,15 @@ class Slicer;
 // </todo>
 
 
-template<class T> class MaskedArray
+template<typename T, typename ArrayAlloc, typename MaskAlloc>
+class MaskedArray
 {
 
 public:
+  typedef Array<T, ArrayAlloc> array_type;
+  typedef Array<LogicalArrayElem, MaskAlloc> mask_type;
+  typedef MaskedArray<T, ArrayAlloc, MaskAlloc> masked_array_type;
+  
   // Default constructor for a MaskedArray does not allocate any memory
   // for the Data array or Mask. Hence the masked array 
   // should not be used until some data is allocated to the object using one
@@ -334,9 +338,9 @@ public:
   // a whole family of setData functions with different arguements,
   // analogous to the constructors. However these are sufficient for the
   // moment. 
-  void setData(const Array<T> & data, const LogicalArray & mask, 
+  void setData(const array_type & data, const mask_type& mask, 
 	  bool isReadOnly=false);
-  void setData(const MaskedArray<T> & array, bool isReadOnly=false);
+  void setData(const masked_array_type& array, bool isReadOnly=false);
     // Create a MaskedArray from an Array and a LogicalArray.
     //
     // The internal mask is a total copy of the input mask, and is
@@ -355,9 +359,9 @@ public:
     // </thrown>
     //
     // <group>
-    MaskedArray(const Array<T> &inarray, const LogicalArray &inmask,
+    MaskedArray(const array_type &inarray, const LogicalArray &inmask,
                 bool isreadonly);
-    MaskedArray(const Array<T> &inarray, const LogicalArray &inmask);
+    MaskedArray(const array_type &inarray, const LogicalArray &inmask);
     // </group>
 
     // Create a MaskedArray from a MaskedArray and a LogicalArray.
@@ -381,9 +385,9 @@ public:
     // </thrown>
     //
     // <group>
-    MaskedArray(const MaskedArray<T> &inarray, const LogicalArray &inmask,
+    MaskedArray(const masked_array_type &inarray, const LogicalArray &inmask,
                 bool isreadonly);
-    MaskedArray(const MaskedArray<T> &inarray, const LogicalArray &inmask);
+    MaskedArray(const masked_array_type &inarray, const LogicalArray &inmask);
     // </group>
 
     // Create a MaskedArray from an Array and a MaskedLogicalArray.
@@ -404,9 +408,9 @@ public:
     // </thrown>
     //
     // <group>
-    MaskedArray(const Array<T> &inarray, const MaskedLogicalArray &inmask,
+    MaskedArray(const array_type &inarray, const MaskedLogicalArray &inmask,
                 bool isreadonly);
-    MaskedArray(const Array<T> &inarray, const MaskedLogicalArray &inmask);
+    MaskedArray(const array_type &inarray, const MaskedLogicalArray &inmask);
     // </group>
 
     // Create a MaskedArray from a MaskedArray and a MaskedLogicalArray.
@@ -431,10 +435,10 @@ public:
     // </thrown>
     //
     // <group>
-    MaskedArray(const MaskedArray<T> &inarray,
+    MaskedArray(const masked_array_type &inarray,
                 const MaskedLogicalArray &inmask,
                 bool isreadonly);
-    MaskedArray(const MaskedArray<T> &inarray,
+    MaskedArray(const masked_array_type &inarray,
                 const MaskedLogicalArray &inmask);
     // </group>
 
@@ -455,11 +459,12 @@ public:
     // constructed MaskedArray is readonly.
     //
     // <group>
-    MaskedArray(const MaskedArray<T> &other, bool isreadonly);
-    MaskedArray(const MaskedArray<T> &other);
+    MaskedArray(const masked_array_type &other, bool isreadonly);
+    MaskedArray(const masked_array_type &other);
+    
+    // The source is left empty after moving
+    MaskedArray(masked_array_type&& source);
     // </group>
-
-    ~MaskedArray();
 
     // Return a MaskedArray.  The new MaskedArray is masked by the input
     // LogicalArray "anded" with the mask of the original MaskedArray.
@@ -469,7 +474,7 @@ public:
     // MaskedArray is writeable, and readonly if the input MaskedArray
     // is readonly.
     //
-    MaskedArray<T> operator() (const LogicalArray &mask) const;
+    masked_array_type operator() (const LogicalArray &mask) const;
 
     // Return a MaskedArray.  The new MaskedArray is masked by the input
     // MaskedLogicalArray "anded" with the mask of the original MaskedArray.
@@ -479,18 +484,18 @@ public:
     // MaskedArray is writeable, and readonly if the input MaskedArray
     // is readonly.
     //
-    MaskedArray<T> operator() (const MaskedLogicalArray &mask) const;
+    masked_array_type operator() (const MaskedLogicalArray &mask) const;
 
     // Get a reference to an array part which extends from "start" to end."
     // <group>
-    MaskedArray<T> operator()(const IPosition &start, const IPosition &end);
+    masked_array_type operator()(const IPosition &start, const IPosition &end);
     // Along the ith axis, every inc[i]'th element is chosen.
-    MaskedArray<T> operator()(const IPosition &start, const IPosition &end,
+    masked_array_type operator()(const IPosition &start, const IPosition &end,
 			      const IPosition &inc);
     // </group>
 
     // Get a reference to an array using a Slicer.
-    MaskedArray<T> operator()(const Slicer&);
+    masked_array_type operator()(const Slicer&);
   
     // Make a copy of the masked array.
     //
@@ -505,12 +510,12 @@ public:
     // returned is readonly.
     //
     // <group>
-    MaskedArray<T> copy(bool isreadonly) const;
-    MaskedArray<T> copy() const;
+    masked_array_type copy(bool isreadonly) const;
+    masked_array_type copy() const;
     // </group>
 
     // Return the internal Array.
-    const Array<T> & getArray() const;
+    const array_type & getArray() const;
 
     // Return the internal Array, writeable.
     //
@@ -518,10 +523,10 @@ public:
     //    <li> ArrayError
     // </thrown>
     //
-    Array<T> & getRWArray() const;
+    array_type & getRWArray() const;
 
     // Return the (const) internal Mask.
-    const LogicalArray & getMask() const;
+    const mask_type & getMask() const;
 
     // The dimensionality of this masked array.
     size_t ndim() const;
@@ -546,8 +551,8 @@ public:
 
     // Are the shapes identical?
     // <group>
-    bool conform(const Array<T> &other) const;
-    bool conform(const MaskedArray<T> &other) const;
+    bool conform(const array_type &other) const;
+    bool conform(const masked_array_type &other) const;
     // </group>
 
     // The length of each axis.
@@ -570,9 +575,10 @@ public:
     //    <li> ArrayError
     // </thrown>
     //
-    MaskedArray<T> &operator=(const Array<T> &inarray);
+    masked_array_type &operator=(const array_type &inarray);
+    masked_array_type &operator=(array_type&& inarray);
 
-    // Copy the values in other to this, only copying those elements
+    // Copies/moves the values in other to this, only copying those elements
     // for which the logical AND of the corresponding mask elements
     // of both MaskedArrays is true.
     //
@@ -582,7 +588,8 @@ public:
     // </thrown>
     //
     // <group>
-    MaskedArray<T> &operator=(const MaskedArray<T> &other);
+    masked_array_type &operator=(const masked_array_type &other);
+    masked_array_type &operator=(masked_array_type&& other);
     // </group>
 
     // Set every element of this array to "value", only setting those elements
@@ -594,7 +601,7 @@ public:
     //    <li> ArrayError
     // </thrown>
     //
-    MaskedArray<T> &operator=(const T &value);
+    masked_array_type &operator=(const T &value);
 
     // Return a "compressed" Array containing only the valid
     // elements of the MaskedArray.  The number of elements in the
@@ -603,7 +610,7 @@ public:
     // <group>
 
     // The returned Array will have dimension one.
-    Array<T> getCompressedArray () const;
+    Array<T, ArrayAlloc> getCompressedArray () const;
 
     // The returned Array will have the input shape.  This shape must
     // give the returned Array the required number of elements.
@@ -612,7 +619,7 @@ public:
     //    <li> ArrayError
     // </thrown>
     //
-    Array<T> getCompressedArray (const IPosition & shape) const;
+    Array<T, ArrayAlloc> getCompressedArray (const IPosition & shape) const;
 
     // </group>
 
@@ -626,7 +633,7 @@ public:
     //    <li> ArrayError
     // </thrown>
     //
-    void getCompressedArray (Array<T> & inarr) const;
+    void getCompressedArray (array_type & inarr) const;
 
     // Set only the valid elements of the MaskedArray from the argument
     // "compressed" Array.  The size of the
@@ -638,7 +645,7 @@ public:
     //    <li> ArrayError
     // </thrown>
     //
-    void setCompressedArray (const Array<T> & inarr);
+    void setCompressedArray (const array_type& inarr);
 
     // Manipulate the storage for the underlying Array.
     // See the description of the corresponding Array functions
@@ -674,10 +681,10 @@ public:
 
 protected:
     // The array.
-    Array<T> *pArray;
+    std::unique_ptr<array_type> pArray;
 
     // The mask.
-    LogicalArray *pMask;
+    std::unique_ptr<mask_type> pMask;
 
     // Cache the number of valid elements.
     size_t nelemValid;
@@ -719,12 +726,12 @@ protected:
 //
 //   <group name=conform2>
 //
-template<class T, class U>
-  bool conform2 (const MaskedArray<T> &left, const Array<U> &right);
-template<class T, class U>
-  bool conform2 (const Array<T> &left, const MaskedArray<U> &right);
-template<class T, class U>
-  bool conform2 (const MaskedArray<T> &left, const MaskedArray<U> &right);
+template<typename TL, typename ArrayAllocL, typename MaskAllocL, typename TR, typename ArrayAllocR>
+  bool conform2 (const MaskedArray<TL, ArrayAllocL, MaskAllocL> &left, const Array<TR, ArrayAllocR> &right);
+template<typename TL, typename ArrayAllocL, typename TR, typename ArrayAllocR, typename MaskAllocR>
+  bool conform2 (const Array<TL, ArrayAllocL> &left, const MaskedArray<TR, ArrayAllocR, MaskAllocR> &right);
+template<typename TL, typename ArrayAllocL, typename MaskAllocL, typename TR, typename ArrayAllocR, typename MaskAllocR>
+  bool conform2 (const MaskedArray<TL, ArrayAllocL, MaskAllocL> &left, const MaskedArray<TR, ArrayAllocR, MaskAllocR> &right);
 //
 //   </group>
 

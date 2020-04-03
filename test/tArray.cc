@@ -1261,6 +1261,7 @@ BOOST_AUTO_TEST_CASE( cube_init_from_data )
   values.reset();
   c.resize(IPosition(3, 2, 3, 2), false);
   c.resize(2, 4, 4, false);
+  BOOST_CHECK(true);
 }
 
 BOOST_AUTO_TEST_CASE( matrix_init_from_data )
@@ -1271,6 +1272,7 @@ BOOST_AUTO_TEST_CASE( matrix_init_from_data )
   values.reset();
   c.resize(IPosition(2, 2, 3), false);
   c.resize(4, 4, false);
+  BOOST_CHECK(true);
 }
 
 BOOST_AUTO_TEST_CASE( vector_init_from_data )
@@ -1281,6 +1283,7 @@ BOOST_AUTO_TEST_CASE( vector_init_from_data )
   values.reset();
   c.resize(IPosition(1, 3), false);
   c.resize(4, false);
+  BOOST_CHECK(true);
 }
 
 BOOST_AUTO_TEST_CASE( new_interface1 )

@@ -355,12 +355,6 @@ public:
 	    LengthOrLast endInterpretation = endIsLength);
     // </group>
 
-    // Copy constructor (copy semantics).
-    Slicer (const Slicer&);
-
-    // Assignment (copy semantics).
-    Slicer& operator= (const Slicer&);
-
     // Equality
     bool operator==(const Slicer&) const;
 
@@ -429,7 +423,7 @@ private:
     // This is to prevent the user from the unexpected and meaningless
     // Slicer that would result when the ssize_t argument is promoted to
     // an IPosition.
-    Slicer (ssize_t);
+    // Slicer (ssize_t);
 
     // Check the given start, end/length and stride.
     // Fill in the length or end.
@@ -450,7 +444,7 @@ private:
 // Print the contents of the specified Slicer to the specified stream.
 std::ostream& operator << (std::ostream& stream, const Slicer& slicer);
 // </group>
-
+std::string to_string(const Slicer& slicer);
 
 
 inline size_t Slicer::ndim() const

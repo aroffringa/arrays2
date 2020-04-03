@@ -30,6 +30,7 @@
 #include "ArrayError.h"
 
 #include <istream>
+#include <sstream>
 
 namespace casacore { //# NAMESPACE CASACORE - BEGIN
 namespace array2 {
@@ -113,37 +114,6 @@ Slicer::Slicer (const Slice& x,
     fillSlice (x, start_p(0), len_p(0), stride_p(0));
     fillEndLen();
 }
-
-
-Slicer::Slicer (const Slicer& that)
-: asEnd_p (that.asEnd_p),
-  start_p (that.start_p),
-  end_p   (that.end_p),
-  stride_p(that.stride_p),
-  len_p   (that.len_p),
-  fixed_p (that.fixed_p)
-{}
-
-Slicer& Slicer::operator= (const Slicer& that)
-{
-    if (this != &that) {
-	size_t nels = that.ndim();
-	if (ndim() != nels) {
-	    start_p.resize (nels);
-	    end_p.resize (nels);
-	    stride_p.resize (nels);
-	    len_p.resize (nels);
-	}
-	asEnd_p  = that.asEnd_p;
-	start_p  = that.start_p;
-	end_p    = that.end_p;
-	stride_p = that.stride_p;
-	len_p    = that.len_p;
-	fixed_p  = that.fixed_p;
-    }
-    return *this;
-}
-
 
 bool Slicer::operator==(const Slicer& that) const
 {
@@ -289,6 +259,13 @@ std::ostream  &operator << (std::ostream &stream, const Slicer &slicer)
          << slicer.length ();
 
   return stream;
+}
+
+std::string to_string(const Slicer& slicer)
+{
+  std::ostringstream str;
+  str << slicer;
+  return str.str();
 }
 
 } } //# NAMESPACE CASACORE - END

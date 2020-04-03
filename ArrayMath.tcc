@@ -855,7 +855,7 @@ template<typename T, typename Alloc> Array<T, Alloc> pow(const Array<T, Alloc> &
 template<typename T, typename Alloc> Array<T, Alloc> atan2(const Array<T, Alloc> &a, const Array<T, Alloc> &b)
 {
     checkArrayShapes (a, b, "atan2");
-    return arrayTransformResult (a, b, std::atan2<T,T>);
+    return arrayTransformResult (a, b, [](T l, T r) { return std::atan2(l,r);});
 }
 
 template<typename T, typename Alloc> Array<T, Alloc> atan2(const T &a, const Array<T, Alloc> &b)

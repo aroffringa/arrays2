@@ -34,9 +34,6 @@
 #include "Array.h"
 #include "ArrayUtil.h"
 
-// TODO remove Regex usage
-#include <casacore/casa/Utilities/Regex.h>
-
 namespace casacore { //# NAMESPACE CASACORE - BEGIN
 namespace array2 {
   
@@ -60,31 +57,25 @@ Vector<std::string> stringToVector (const std::string& str, char delim)
   return vec;
 }
 
-Vector<std::string> stringToVector (const std::string& string, const Regex& delim)
+Vector<std::string> stringToVector (const std::string& string, const std::regex& delim)
 {
-    Vector<std::string> vec;
-    size_t nr = 0;
-    const char* s = string.c_str();
-    int sl = string.length();
-    if (sl == 0) {
-        return vec;
+  std::vector<std::string> stdvec;
+  const char* s = string.c_str();
+  int sl = string.length();
+  if (sl != 0)
+  {
+    const char* pos = s;
+    std::cmatch results;
+    bool match = std::regex_search (s, s+sl, results, delim);
+    while (match) {
+      stdvec.emplace_back(std::string (pos, results[0].first));
+      pos = results[0].first + results[0].length();
+      match = std::regex_search (pos, s+sl, results, delim);
     }
-    int pos = 0;
-    int matchlen;
-    int p = delim.search (s, sl, matchlen, pos);
-    while (p >= 0) {
-        if (nr >= vec.nelements()) {
-	    vec.resize (nr+64, true);
-	}
-	vec(nr++) = std::string (s+pos, p - pos);
-	pos = p + matchlen;
-	p = delim.search (s, sl, matchlen, pos);
-    }
-    vec.resize (nr+1, true);
-    vec(nr) = std::string (s+pos, sl - pos);
-    return vec;
+    stdvec.emplace_back( std::string (pos, s + sl - pos) );
+  }
+  return Vector<std::string>(stdvec);
 }
-
 
 size_t partialFuncHelper (int& nelemCont,
 			IPosition& resultShape, IPosition& incr,

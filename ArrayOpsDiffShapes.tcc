@@ -54,7 +54,7 @@ LogicalArray reformedMask(const Array<T, Alloc>& data, const T truthvalue,
 
       // Create an array with desiredform's shape,
       LogicalArray collapseddata(desiredform);
-      ReadOnlyArrayIterator<T> data_cursor(data,
+      ReadOnlyArrayIterator<T, Alloc> data_cursor(data,
 					   IPosition::otherAxes(n_data_dim,
 					      IPosition::makeAxisPath(n_desired_dim)));
       IPosition collapsedPos;

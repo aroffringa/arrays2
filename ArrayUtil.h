@@ -32,13 +32,10 @@
 //# Includes
 #include "Vector.h"
 
+#include <regex>
 #include <string>
 
 namespace casacore { //# NAMESPACE CASACORE - BEGIN
-
-//# Forward Declarations
-class Regex;
-
 namespace array2 {
 
 // <summary>
@@ -101,7 +98,7 @@ namespace array2 {
 
 // <group name=stringToVector>
 Vector<std::string> stringToVector (const std::string& string, char delim = ',');
-Vector<std::string> stringToVector (const std::string& string, const Regex& delim);
+Vector<std::string> stringToVector (const std::string& string, const std::regex& delim);
 // </group>
 
 

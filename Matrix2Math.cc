@@ -25,16 +25,17 @@
 //#
 //# $Id$
 
-#include <casacore/casa/BasicSL/Complex.h>
-#include <casacore/casa/Arrays/Vector.h>
-#include <casacore/casa/Arrays/Matrix.h>
-#include <casacore/casa/Arrays/MatrixMath.h>
-#include <casacore/casa/Arrays/ArrayLogical.h>
-#include <casacore/casa/Arrays/ArrayMath.h>
-#include <casacore/casa/Arrays/ArrayError.h>
-#include <casacore/casa/iostream.h>
+#include "Vector.h"
+#include "Matrix.h"
+#include "MatrixMath.h"
+#include "ArrayLogical.h"
+#include "ArrayMath.h"
+#include "ArrayError.h"
+
+#include <complex>
 
 namespace casacore { //# NAMESPACE CASACORE - BEGIN
+namespace array2 {
 
 Matrix<double> Rot3D(int axis, double angle) 
 {
@@ -65,56 +66,54 @@ Matrix<float> Rot3D(int axis, float angle)
   return retval;
 }
 
-// In order to create a specific Complex and Dcomplex function (with the
+// In order to create a specific std::complex<float> and Dcomplex function (with the
 // little nuances associated with complex space) this file carries some
 // non-template copies of the templated Matrix math stuff.
 
 // the vector dot/scalar/inner product
-Complex innerProduct (const Vector<Complex> &A, const Vector<Complex> &B) {
+std::complex<float> innerProduct (const Vector<std::complex<float>> &A, const Vector<std::complex<float>> &B) {
   // check for correct dimensions
   if (!(A.conform(B)))
     throw (ArrayConformanceError("innerProduct - conform() error."));
-  Complex scalar = 0;
+  std::complex<float> scalar = 0;
   for (size_t i = 0; i < A.nelements(); i++)
     scalar += A(i)*conj(B(i));
   return scalar;
 }
  
-Matrix<Complex> conjugate(const Matrix<Complex> &A)
+Matrix<std::complex<float>> conjugate(const Matrix<std::complex<float>> &A)
 {
-  cout << "MatrixMath::conjugate is deprecated, use ArrayMath::conj." << endl;
   return conj(A);
 }
 
-Matrix<Complex> adjoint(const Matrix<Complex> &A)
+Matrix<std::complex<float>> adjoint(const Matrix<std::complex<float>> &A)
 {
-  return transpose(Matrix<Complex>(conj(A)));
+  return transpose(Matrix<std::complex<float>>(conj(A)));
 }
 
-// ----------------DComplex subroutines---------------------------
+// ----------------std::complex<double> subroutines---------------------------
 
 // the vector dot/scalar/inner product
-DComplex innerProduct (const Vector<DComplex> &A, const Vector<DComplex> &B) 
+std::complex<double> innerProduct (const Vector<std::complex<double>> &A, const Vector<std::complex<double>> &B) 
 {
   // check for correct dimensions
   if (!(A.conform(B)))
     throw (ArrayConformanceError("innerProduct - conform() error."));
-  DComplex scalar = 0;
+  std::complex<double> scalar = 0;
   for (size_t i = 0; i < A.nelements(); i++)
     scalar += A(i)*conj(B(i));
   return scalar;
 }
  
 
-Matrix<DComplex> conjugate(const Matrix<DComplex> &A)
+Matrix<std::complex<double>> conjugate(const Matrix<std::complex<double>> &A)
 {
-  cout << "MatrixMath::conjugate is deprecated, use ArrayMath::conj." << endl;
   return conj(A);
 }
 
-Matrix<DComplex> adjoint (const Matrix<DComplex> &A)
+Matrix<std::complex<double>> adjoint (const Matrix<std::complex<double>> &A)
 {
-  return transpose(Matrix<DComplex>(conj(A)));
+  return transpose(Matrix<std::complex<double>>(conj(A)));
 }
 
 // int Vector magnitude/norm
@@ -135,14 +134,14 @@ double norm (const Vector<double> &A)
   return std::sqrt(innerProduct(A,A));
 }
 
-// Complex vector magnitude/norm
-float norm (const Vector<Complex> &A) 
+// std::complex<float> vector magnitude/norm
+float norm (const Vector<std::complex<float>> &A) 
 {
   return std::sqrt(real(innerProduct(A,A)));
 }
 
-// DComplex vector magnitude/norm
-double norm (const Vector<DComplex> &A) 
+// std::complex<double> vector magnitude/norm
+double norm (const Vector<std::complex<double>> &A) 
 {
   return std::sqrt(real(innerProduct(A,A)));
 }
@@ -196,7 +195,7 @@ double normI (const Matrix<double> &A)
 }
                                     
 // the infinite norm of a matrix
-float normI (const Matrix<Complex> &A)
+float normI (const Matrix<std::complex<float>> &A)
 {
   float output = 0;
   if( A.nelements()!=0) {
@@ -212,7 +211,7 @@ float normI (const Matrix<Complex> &A)
 }
 
 // the infinite norm of a matrix
-double normI (const Matrix<DComplex> &A)
+double normI (const Matrix<std::complex<double>> &A)
 {
   double output = 0;
   if( A.nelements()!=0) {
@@ -276,7 +275,7 @@ double norm1 (const Matrix<double> &A)
 }
 
 // The one norm of a matrix
-float norm1 (const Matrix<Complex> &A)
+float norm1 (const Matrix<std::complex<float>> &A)
 {
   float output = 0;
   if( A.nelements()!=0) {
@@ -292,7 +291,7 @@ float norm1 (const Matrix<Complex> &A)
 }
 
 // The one norm of a matrix
-double norm1 (const Matrix<DComplex> &A)
+double norm1 (const Matrix<std::complex<double>> &A)
 {
   double output = 0;
   if( A.nelements()!=0) {
@@ -307,7 +306,7 @@ double norm1 (const Matrix<DComplex> &A)
   return output;
 }
 
-Matrix<float> rproduct (const Matrix<Complex> &A, const Matrix<Complex> &B) {
+Matrix<float> rproduct (const Matrix<std::complex<float>> &A, const Matrix<std::complex<float>> &B) {
   if (A.ncolumn() != B.nrow())
     throw (ArrayError("product - multiplication of" 
 		      " these matrices shapes is undefined"));
@@ -321,7 +320,7 @@ Matrix<float> rproduct (const Matrix<Complex> &A, const Matrix<Complex> &B) {
   return result;
 }
 
-Vector<float> rproduct(const Matrix<Complex> &A, const Vector<Complex> &x) {
+Vector<float> rproduct(const Matrix<std::complex<float>> &A, const Vector<std::complex<float>> &x) {
   if (A.ncolumn() != x.nelements())
     throw (ArrayError("product - multiplication of" 
 		      " these matrices shapes is undefined"));
@@ -334,13 +333,13 @@ Vector<float> rproduct(const Matrix<Complex> &A, const Vector<Complex> &x) {
   return result;
 }
 
-Vector<Complex> product(const Matrix<Complex> &A, const Vector<float> &x) {
+Vector<std::complex<float>> product(const Matrix<std::complex<float>> &A, const Vector<float> &x) {
   if (A.ncolumn() != x.nelements())
     throw (ArrayError("product - multiplication of" 
 		      " these matrices shapes is undefined"));
-  Vector<Complex> result(A.nrow());
+  Vector<std::complex<float>> result(A.nrow());
   for (size_t i = 0; i < A.nrow(); i++) {
-    result(i) = Complex(0);
+    result(i) = std::complex<float>(0);
     for (size_t k = 0; k < A.ncolumn(); k++) result(i) += 
 		    A(i, k) * x(k);
   }
@@ -354,5 +353,5 @@ Matrix<float> adjoint (const Matrix<float> &A){
 Matrix<double> adjoint (const Matrix<double> &A){
   return transpose(A);}
 
-} //# NAMESPACE CASACORE - END
+} } //# NAMESPACE CASACORE - END
 

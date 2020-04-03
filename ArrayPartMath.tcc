@@ -1006,13 +1006,13 @@ template<class T> Array<T> partialInterFractileRanges (const Array<T>& array,
 }
 
 
-template<typename T, typename RES>
-void partialArrayMath (Array<RES>& res,
-                       const Array<T>& a,
+template<typename T, typename Alloc, typename RES, typename RESAlloc>
+void partialArrayMath (Array<RES, RESAlloc>& res,
+                       const Array<T, Alloc>& a,
                        const IPosition& collapseAxes,
                        const ArrayFunctorBase<T,RES>& funcObj)
 {
-  ReadOnlyArrayIterator<T> aiter(a, collapseAxes);
+  ReadOnlyArrayIterator<T, Alloc> aiter(a, collapseAxes);
   IPosition shape(a.shape().removeAxes (collapseAxes));
   res.resize (shape);
   RES* data = res.data();
@@ -1023,9 +1023,9 @@ void partialArrayMath (Array<RES>& res,
 }
 
 
-template <typename T, typename RES>
-void boxedArrayMath (Array<RES>& result,
-                     const Array<T>& array,
+template <typename T, typename Alloc, typename RES, typename RESAlloc>
+void boxedArrayMath (Array<RES, RESAlloc>& result,
+                     const Array<T, Alloc>& array,
                      const IPosition& boxShape,
                      const ArrayFunctorBase<T,RES>& funcObj)
 {
@@ -1060,9 +1060,9 @@ void boxedArrayMath (Array<RES>& result,
   }
 }
 
-template <typename T, typename RES>
-void slidingArrayMath (Array<RES>& result,
-                       const Array<T>& array,
+template <typename T, typename Alloc, typename RES, typename RESAlloc>
+void slidingArrayMath (Array<RES, RESAlloc>& result,
+                       const Array<T, Alloc>& array,
                        const IPosition& halfBoxShape,
                        const ArrayFunctorBase<T,RES>& funcObj,
                        bool fillEdge)

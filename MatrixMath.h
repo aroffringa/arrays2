@@ -152,11 +152,13 @@ template <class T>
 //
 // The complex conjugate of the complex matrix A.
 //
+[[ deprecated("MatrixMath::conjugate is deprecated, use ArrayMath::conj.") ]]
 Matrix<std::complex<float>> conjugate (const Matrix<std::complex<float>> &A);
 
 //
 // The complex conjugate of the double precision complex matrix A.
 //
+[[ deprecated("MatrixMath::conjugate is deprecated, use ArrayMath::conj.") ]]
 Matrix<std::complex<double>> conjugate (const Matrix<std::complex<double>> &A);
 
 //

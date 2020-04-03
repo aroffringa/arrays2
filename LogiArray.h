@@ -28,7 +28,6 @@
 #ifndef CASA_LOGIARRAY_2_H
 #define CASA_LOGIARRAY_2_H
 
-#include "LogiArrayFwd.h"
 #include "Array.h"
 
 namespace casacore { //# NAMESPACE CASACORE - BEGIN

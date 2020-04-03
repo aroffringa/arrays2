@@ -46,6 +46,14 @@ std::ostream & operator<< (std::ostream &s, const MaskedArray<T> &a)
   return s;
 }
 
+template<typename T>
+std::string to_string(const MaskedArray<T> &maskedArray)
+{
+  std::ostringstream str;
+  str << maskedArray;
+  return str.str();
+}
+
 } } //# NAMESPACE CASACORE - END
 
 #endif

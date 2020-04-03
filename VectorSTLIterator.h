@@ -25,16 +25,17 @@
 //#
 //# $Id$
 
-#ifndef CASA_VECTORSTLITERATOR_H
-#define CASA_VECTORSTLITERATOR_H
+#ifndef CASA_VECTORSTLITERATOR_2_H
+#define CASA_VECTORSTLITERATOR_2_H
 
 //# Includes
-#include <casacore/casa/aips.h>
-#include <casacore/casa/Arrays/Vector.h>
+#include "Vector.h"
+
 #include <iterator>
 
 namespace casacore { //# NAMESPACE CASACORE - BEGIN
-
+namespace array2 {
+  
 //# Forward Declarations
 
 // <summary> Casacore Vector iterator </summary>
@@ -62,7 +63,7 @@ namespace casacore { //# NAMESPACE CASACORE - BEGIN
 // </ul>
 // </synopsis>
 
-template <class T>
+template <typename T, typename Alloc=std::allocator<T>>
 class VectorSTLIterator
 : public std::iterator<std::random_access_iterator_tag, T> {
  public:
@@ -79,40 +80,19 @@ class VectorSTLIterator
   // the same as if created from <src>Vector.begin()</src>. Copy
   // constructor and assignment can be the default ones.
   // <group>
-  explicit VectorSTLIterator(const Vector<T> &c)
+  explicit VectorSTLIterator(const Vector<T, Alloc> &c)
     : start_p(const_cast<T*>(c.data())), 
       step_p (std::max(ssize_t(1), c.steps()(0))),
       iter_p (const_cast<T*>(c.data()))
   {}
   VectorSTLIterator() : start_p(0), step_p(1), iter_p(0)
   {}
-  VectorSTLIterator(const typename Array<T>::IteratorSTL &c)
+  VectorSTLIterator(const typename Array<T, Alloc>::IteratorSTL &c)
     : start_p(c.pos()), 
       step_p (std::max(ssize_t(1), c.steps()(0))),
       iter_p (start_p)
   {}
-  // Copy constructor.
-  //# It is certainly needed for the Intel compiler.
-  VectorSTLIterator(const VectorSTLIterator<T>& that)
-    : std::iterator<std::random_access_iterator_tag, T>(that), 
-      start_p(that.start_p), step_p(that.step_p),
-      iter_p(that.iter_p)
-  {}
-  // Assignment.
-  //# It is certainly needed for the Intel compiler.
-  VectorSTLIterator<T>& operator=(const VectorSTLIterator<T>& that)
-  {
-    if (this != &that) {
-      std::iterator<std::random_access_iterator_tag, T>::operator=(that);
-      start_p = that.start_p;
-      step_p  = that.step_p; 
-      iter_p  = that.iter_p;
-    }
-    return *this;
-  }
   // </group>
-  // Destructor
-  ~VectorSTLIterator() {;}
   // Access
   // <group>
   reference operator[](size_t i) { return *(start_p+i*step_p); };
@@ -129,19 +109,19 @@ class VectorSTLIterator
     iterator t = *this; iter_p+=step_p; return t; }; 
   iterator &operator--() { iter_p-=step_p; return *this; };
   iterator operator--(int) {
-    VectorSTLIterator<T> t = *this;iter_p-=step_p; return t; }; 
+    VectorSTLIterator<T, Alloc> t = *this;iter_p-=step_p; return t; }; 
   iterator &operator+=(difference_type i) {
     iter_p+=i*step_p; return *this; };
   iterator &operator-=(difference_type i) {
     iter_p-=i*step_p; return *this; };
   iterator operator+(difference_type i) const {
-    VectorSTLIterator<T> t = *this; return t+=i; };
+    VectorSTLIterator<T, Alloc> t = *this; return t+=i; };
   iterator operator-(difference_type i) const {
-    VectorSTLIterator<T> t = *this; return t-=i; };
+    VectorSTLIterator<T, Alloc> t = *this; return t-=i; };
   // </group>
   // Size related
   // <group>
-  difference_type operator-(const VectorSTLIterator<T> &x) const {
+  difference_type operator-(const VectorSTLIterator<T, Alloc> &x) const {
     return (iter_p-x.iter_p)/step_p; };
   // </group>
   // Comparisons
@@ -169,6 +149,6 @@ class VectorSTLIterator
 };
 
 
-} //# NAMESPACE CASACORE - END
+} } //# NAMESPACE CASACORE - END
 
 #endif

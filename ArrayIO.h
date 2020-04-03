@@ -342,7 +342,8 @@ void writeAsciiVector (const Vector<T>& vec, const char* fileName);
 
 // </group>
 
-
+template<typename T, typename Alloc>
+std::string to_string(const Array<T, Alloc> array);
 
 } } //# NAMESPACE CASACORE - END
 

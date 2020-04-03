@@ -34,23 +34,25 @@
 namespace casacore { //# NAMESPACE CASACORE - BEGIN
 namespace array2 {
 
-template<class T> ArrayIterator<T>::ArrayIterator(const Array<T> &a, size_t byDim)
+template<typename T, typename Alloc> ArrayIterator<T, Alloc>::ArrayIterator(const Array<T, Alloc> &a, size_t byDim)
 : ArrayPositionIterator(a.shape(), byDim),
-  ap_p(0)
+  ap_p(0),
+  pOriginalArray_p(a.allocator())
 {
     init(a);
 }
 
-template<class T> ArrayIterator<T>::ArrayIterator(const Array<T> &a,
+template<typename T, typename Alloc> ArrayIterator<T, Alloc>::ArrayIterator(const Array<T, Alloc> &a,
 						  const IPosition &axes,
 						  bool axesAreCursor)
 : ArrayPositionIterator(a.shape(), axes, axesAreCursor),
-  ap_p(0)
+  ap_p(0),
+  pOriginalArray_p(a.allocator())
 {
     init(a);
 }
 
-template<class T> ArrayIterator<T>::~ArrayIterator()
+template<typename T, typename Alloc> ArrayIterator<T, Alloc>::~ArrayIterator()
 {
     delete ap_p;
 }
@@ -59,13 +61,13 @@ template<class T> ArrayIterator<T>::~ArrayIterator()
 // <thrown>
 //     <item> ArrayIteratorError
 // </thrown>
-template<class T> void ArrayIterator<T>::init(const Array<T> &a)
+template<typename T, typename Alloc> void ArrayIterator<T, Alloc>::init(const Array<T, Alloc> &a)
 {
     pOriginalArray_p.reference (a);
     dataPtr_p = pOriginalArray_p.begin_p;
 
     if (dimIter() < 1)
-	throw(ArrayIteratorError("ArrayIterator<T>::ArrayIterator<T> - "
+	throw(ArrayIteratorError("ArrayIterator<T, Alloc>::ArrayIterator<T, Alloc> - "
 				 " at the moment cannot iterate by scalars"));
     IPosition blc(pOriginalArray_p.ndim(), 0);
     IPosition trc(pOriginalArray_p.endPosition());
@@ -91,20 +93,20 @@ template<class T> void ArrayIterator<T>::init(const Array<T> &a)
     // correct shape. We only want to remove the iteration axes, not the
     // possible degenerate axes in the cursor).
     if (dimIter() < pOriginalArray_p.ndim()) {
-        ap_p = new Array<T>(pOriginalArray_p(blc,trc).nonDegenerate(cursorAxes()));
+        ap_p = new Array<T, Alloc>(pOriginalArray_p(blc,trc).nonDegenerate(cursorAxes()));
     } else {
         // Same dimensionality, so no degenerate axes
-        ap_p = new Array<T>(pOriginalArray_p);
+        ap_p = new Array<T, Alloc>(pOriginalArray_p);
     }
 }
 
 // <thrown>
 //     <item> ArrayIteratorError
 // </thrown>
-template<class T> void ArrayIterator<T>::apSetPointer(int stepDim)
+template<typename T, typename Alloc> void ArrayIterator<T, Alloc>::apSetPointer(int stepDim)
 {
     if (ap_p == 0)
-	throw(ArrayIteratorError("ArrayIterator<T>::apSetPointer()"
+	throw(ArrayIteratorError("ArrayIterator<T, Alloc>::apSetPointer()"
 				 " - no iteration array!"));
     if (pastEnd()) {
 	ap_p->begin_p = 0;  // Mark it "invalid"
@@ -119,24 +121,24 @@ template<class T> void ArrayIterator<T>::apSetPointer(int stepDim)
     }
 }
 
-template<class T> void ArrayIterator<T>::reset()
+template<typename T, typename Alloc> void ArrayIterator<T, Alloc>::reset()
 {
     ArrayPositionIterator::reset();
     apSetPointer(-1);
 }
 
-template<class T> void ArrayIterator<T>::next()
+template<typename T, typename Alloc> void ArrayIterator<T, Alloc>::next()
 {
     int stepDim = ArrayPositionIterator::nextStep();
     apSetPointer(stepDim);
 }
 
   
-template<class T> void ArrayIterator<T>::set (const IPosition& cursorPos)
+template<typename T, typename Alloc> void ArrayIterator<T, Alloc>::set (const IPosition& cursorPos)
 {
     ArrayPositionIterator::set (cursorPos);
     if (ap_p == 0)
-	throw(ArrayIteratorError("ArrayIterator<T>::apSetPointer()"
+	throw(ArrayIteratorError("ArrayIterator<T, Alloc>::apSetPointer()"
 				 " - no iteration array!"));
     if (pastEnd()) {
 	ap_p->begin_p = 0;  // Mark it "invalid"
@@ -147,7 +149,7 @@ template<class T> void ArrayIterator<T>::set (const IPosition& cursorPos)
     }  
 }
 
-template<class T> ArrayBase& ArrayIterator<T>::getArray()
+template<typename T, typename Alloc> ArrayBase& ArrayIterator<T, Alloc>::getArray()
 {
     return array();
 }

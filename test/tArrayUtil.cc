@@ -32,8 +32,6 @@
 #include "../Matrix.h"
 #include "../Vector.h"
 
-#include <casacore/casa/Utilities/Regex.h>
-
 // <summary>
 // Test of functions in ArrayUtil.h.
 // </summary>
@@ -81,7 +79,7 @@ BOOST_AUTO_TEST_CASE( string_to_vector )
 BOOST_AUTO_TEST_CASE( string_to_vector_regex )
 {
     // Test using multiple spaces and a single comma as delimiter.
-    casacore::Regex delim(" *, *");
+    std::regex delim(" *, *");
  
     Vector<std::string> vec1 = stringToVector ("", delim);
     BOOST_CHECK_EQUAL (vec1.nelements(), 0);

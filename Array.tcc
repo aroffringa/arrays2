@@ -44,31 +44,11 @@
 namespace casacore {//#Begin casa namespace
 namespace array2 {
 
-template<typename T, typename Alloc> Array<T, Alloc>::Array()
-: data_p(new Storage<T, Alloc>()),
-  begin_p(nullptr),
-  end_p(nullptr)
-{
-  assert(ok());
-}
-
 template<typename T, typename Alloc> Array<T, Alloc>::Array(const Alloc& allocator)
 : data_p(new Storage<T, Alloc>(0, allocator)),
   begin_p(nullptr),
   end_p(nullptr)
 {
-  assert(ok());
-}
-
-// <thrown>
-//   <item> ArrayShapeError
-// </thrown>
-template<typename T, typename Alloc> Array<T, Alloc>::Array(const IPosition &shape)
-: ArrayBase(shape),
-  data_p(new Storage<T, Alloc>(nelements())),
-  begin_p(data_p->data())
-{
-  setEndIter();
   assert(ok());
 }
 
@@ -90,9 +70,9 @@ Array<T, Alloc>::Array(const IPosition &shape,
 //   <item> ArrayShapeError
 // </thrown>
 template<typename T, typename Alloc> Array<T, Alloc>::Array(const IPosition &shape,
-  const T &initialValue)
+  const T &initialValue, const Alloc& allocator)
 : ArrayBase(shape),
-  data_p(new Storage<T, Alloc>(nelements(), initialValue)),
+  data_p(new Storage<T, Alloc>(nelements(), initialValue, allocator)),
   begin_p(data_p->data())
 {
   setEndIter();
@@ -187,7 +167,7 @@ template<typename T, typename Alloc> Array<T, Alloc>::~Array() noexcept
 template<class T, typename Alloc>
 std::unique_ptr<ArrayBase> Array<T, Alloc>::makeArray() const
 {
-  return std::unique_ptr<ArrayBase>(new Array<T>(static_cast<const Alloc&>(*this)));
+  return std::unique_ptr<ArrayBase>(new Array<T, Alloc>(static_cast<const Alloc&>(*data_p)));
 }
 
 // It is better for a move assignment to be noexcept, but that would allow
@@ -235,7 +215,7 @@ template<class T, typename Alloc> void Array<T, Alloc>::assignBase (const ArrayB
       throw ArrayError("assign(ArrayBase&) has incorrect template type");
     }
   }
-  assign (static_cast<const Array<T>&>(other));
+  assign (static_cast<const Array<T, Alloc>&>(other));
 }
 
 template<class T, typename Alloc> void Array<T, Alloc>::reference(const Array<T, Alloc> &other)
@@ -251,7 +231,7 @@ template<class T, typename Alloc> void Array<T, Alloc>::reference(const Array<T,
       newShape[i] = other.shape()[i];
     for(size_t i=other.ndim(); i!=fixedDimensionality(); ++i)
       newShape[i] = 1;
-    Array<T, Alloc> tmp;
+    Array<T, Alloc> tmp(*other.data_p);
     tmp.reference(other);
     other.baseReform(tmp, newShape);
     reference( tmp );
@@ -310,7 +290,7 @@ Array<T, Alloc> Array<T, Alloc>::copy(const Alloc& allocator) const
 {
     assert(ok());
 
-    Array<T> vp(shape(), allocator);
+    Array<T, Alloc> vp(shape(), allocator);
     if (ndim() != 0)
         copyToContiguousStorage(vp.begin_p, *this);
     
@@ -370,7 +350,7 @@ Array<T, Alloc>& Array<T, Alloc>::assign_conforming_implementation(const Array<T
     }
   } else {
     // Array was empty; make a new copy and reference it.
-    Array<T, Alloc> tmp (other.copy(static_cast<Alloc>(*this)));
+    Array<T, Alloc> tmp (other.copy(static_cast<Alloc>(*data_p)));
     reference (tmp);
   }
   return *this;
@@ -512,7 +492,7 @@ template<class T, typename Alloc> void Array<T, Alloc>::unique()
     return;
   }
   // OK, we know we are going to need to copy.
-  Array<T, Alloc> tmp(copy(static_cast<Alloc&>(*this)));
+  Array<T, Alloc> tmp(copy(static_cast<Alloc&>(*data_p)));
   reference (tmp);
 }
 
@@ -525,7 +505,7 @@ Array<T, Alloc> Array<T, Alloc>::reform(const IPosition& len) const
   assert(ok());
   // Check if reform is possible and needed.
   // If not needed, simply return a copy.
-  Array<T> tmp(*this);
+  Array<T, Alloc> tmp(*this);
   baseReform (tmp, len);
   tmp.setEndIter();
   return tmp;
@@ -590,16 +570,16 @@ Array<T, Alloc>::capacity () const
 }
 
 template<class T, typename Alloc>
-Array<T> Array<T, Alloc>::nonDegenerate (size_t startingAxis, bool throwIfError) const
+Array<T, Alloc> Array<T, Alloc>::nonDegenerate (size_t startingAxis, bool throwIfError) const
 {
-    Array<T> tmp;
+    Array<T, Alloc> tmp(static_cast<Alloc&>(*data_p));
     assert(ok());
     tmp.nonDegenerate (*this, startingAxis, throwIfError);
     return tmp;
 }
 
 template<class T, typename Alloc>
-void Array<T, Alloc>::nonDegenerate (const Array<T> &other, size_t startingAxis,
+void Array<T, Alloc>::nonDegenerate (const Array<T, Alloc> &other, size_t startingAxis,
 			      bool throwIfError)
 {
   if (startingAxis < other.ndim()) {
@@ -615,9 +595,9 @@ void Array<T, Alloc>::nonDegenerate (const Array<T> &other, size_t startingAxis,
 }
 
 template<class T, typename Alloc>
-Array<T> Array<T, Alloc>::nonDegenerate (const IPosition &ignoreAxes) const
+Array<T, Alloc> Array<T, Alloc>::nonDegenerate (const IPosition &ignoreAxes) const
 {
-    Array<T> tmp;
+    Array<T, Alloc> tmp(static_cast<Alloc&>(*data_p));
     assert(ok());
     tmp.nonDegenerate(*this, ignoreAxes);
     return tmp;
@@ -626,7 +606,7 @@ Array<T> Array<T, Alloc>::nonDegenerate (const IPosition &ignoreAxes) const
 template<class T, typename Alloc>
 void Array<T, Alloc>::removeDegenerate (size_t startingAxis, bool throwIfError)
 {
-    Array<T> tmp;
+    Array<T, Alloc> tmp(static_cast<Alloc&>(*data_p));
     assert(ok());
     tmp.nonDegenerate (*this, startingAxis, throwIfError);
     reference (tmp);
@@ -635,14 +615,14 @@ void Array<T, Alloc>::removeDegenerate (size_t startingAxis, bool throwIfError)
 template<class T, typename Alloc>
 void Array<T, Alloc>::removeDegenerate (const IPosition &ignoreAxes)
 {
-    Array<T> tmp;
+    Array<T, Alloc> tmp(static_cast<Alloc&>(*data_p));
     assert(ok());
     tmp.nonDegenerate(*this, ignoreAxes);
     reference (tmp);
 }
 
 template<class T, typename Alloc>
-void Array<T, Alloc>::doNonDegenerate (const Array<T> &other,
+void Array<T, Alloc>::doNonDegenerate (const Array<T, Alloc> &other,
                                 const IPosition &ignoreAxes)
 {
     assert(ok());
@@ -653,18 +633,18 @@ void Array<T, Alloc>::doNonDegenerate (const Array<T> &other,
 }
 
 template<class T, typename Alloc>
-const Array<T> Array<T, Alloc>::addDegenerate(size_t numAxes) const
+const Array<T, Alloc> Array<T, Alloc>::addDegenerate(size_t numAxes) const
 {
-    Array<T> * This = const_cast<Array<T>*>(this);
-    const Array<T> tmp(This->addDegenerate(numAxes));
+    Array<T, Alloc> * This = const_cast<Array<T, Alloc>*>(this);
+    const Array<T, Alloc> tmp(This->addDegenerate(numAxes));
     return tmp;
 }
 
 template<class T, typename Alloc>
-Array<T> Array<T, Alloc>::addDegenerate(size_t numAxes)
+Array<T, Alloc> Array<T, Alloc>::addDegenerate(size_t numAxes)
 {
     assert(ok());
-    Array<T> tmp(*this);
+    Array<T, Alloc> tmp(*this);
     if (numAxes > 0) {
         baseAddDegenerate (tmp, numAxes);
 	tmp.setEndIter();
@@ -695,7 +675,7 @@ template<class T, typename Alloc> void Array<T, Alloc>::resize(const IPosition& 
     return;
   }
   // OK we differ, so we really have to resize ourselves.
-  Array<T> tmp(len, static_cast<Alloc&>(*this));
+  Array<T, Alloc> tmp(len, static_cast<Alloc&>(*data_p));
   // Copy the contents if needed.
   if (copyValues) {
     tmp.copyMatchingPart (*this);
@@ -735,7 +715,8 @@ void Array<T, Alloc>::copyMatchingPart (const Array<T, Alloc>& from)
   }    
 }
 
-template<class T, typename Alloc> T &Array<T, Alloc>::operator()(const IPosition &index)
+template<class T, typename Alloc>
+T &Array<T, Alloc>::operator()(const IPosition &index)
 {
   assert(ok());
 
@@ -749,7 +730,8 @@ template<class T, typename Alloc> T &Array<T, Alloc>::operator()(const IPosition
   return begin_p[offs];
 }
 
-template<class T, typename Alloc> const T &Array<T, Alloc>::operator()(const IPosition &index) const
+template<class T, typename Alloc>
+const T &Array<T, Alloc>::operator()(const IPosition &index) const
 {
   assert(ok());
   size_t offs=0;
@@ -768,7 +750,7 @@ Array<T, Alloc> Array<T, Alloc>::operator()(const IPosition& b,
   const IPosition& i)
 {
     assert(ok());
-    Array<T> tmp(*this);
+    Array<T, Alloc> tmp(*this);
     size_t offs = makeSubset (tmp, b, e, i);
     tmp.begin_p += offs;
     tmp.setEndIter();
@@ -780,7 +762,7 @@ template<class T, typename Alloc>
 const Array<T, Alloc> Array<T, Alloc>::operator()(
   const IPosition &b, const IPosition &e, const IPosition &i) const
 {
-    return const_cast<Array<T>*>(this)->operator() (b,e,i);
+    return const_cast<Array<T, Alloc>*>(this)->operator() (b,e,i);
 }
 
 template<typename T, typename Alloc> Array<T, Alloc> Array<T, Alloc>::operator()(const IPosition &b,
@@ -793,7 +775,7 @@ template<typename T, typename Alloc> Array<T, Alloc> Array<T, Alloc>::operator()
 template<class T, typename Alloc> const Array<T, Alloc> Array<T, Alloc>::operator()(const IPosition &b,
                                                       const IPosition &e) const
 {
-    return const_cast<Array<T>*>(this)->operator() (b,e);
+    return const_cast<Array<T, Alloc>*>(this)->operator() (b,e);
 }
 
 template<typename T, typename Alloc> Array<T, Alloc> Array<T, Alloc>::operator()(const Slicer& slicer)
@@ -925,7 +907,7 @@ T* Array<T, Alloc>::getStorage(bool& deleteIt)
 
   // We need to do a copy
   size_t n = nelements();
-  T* storage = Alloc::allocate(n);
+  T* storage = data_p->allocate(n);
   try {
     for(size_t i=0; i!=n; ++i)
       new (&storage[i]) T();
@@ -934,7 +916,7 @@ T* Array<T, Alloc>::getStorage(bool& deleteIt)
     // TODO To be correct, the destructors of the already
     // constructed object should be called, but this is
     // a border case so ignored for now.
-    Alloc::deallocate(storage, nelements());
+    data_p->deallocate(storage, nelements());
     throw;
   }
   deleteIt = true;
@@ -997,7 +979,7 @@ void Array<T, Alloc>::freeStorage(const T*&storage, bool deleteIt) const
     // TODO this is only allowed when allocator is always equal, but is done for
     // now to keep the method const.
     // see e.g. std::allocator_traits<allocator_type>::is_always_equal
-    Alloc().deallocate(ptr, n);
+    data_p->deallocate(ptr, n);
   }
   storage = nullptr;
 }
@@ -1030,7 +1012,7 @@ template<class T, typename Alloc>
 void Array<T, Alloc>::takeStorage(const IPosition &shape, T *storage,
   StorageInitPolicy policy)
 {
-  takeStorage(shape, storage, policy, static_cast<Alloc&>(*this));
+  takeStorage(shape, storage, policy, static_cast<Alloc&>(*data_p));
 }
 
 template<class T, typename Alloc>
@@ -1072,7 +1054,7 @@ void Array<T, Alloc>::takeStorage(const IPosition &shape, const T *storage)
 {
     // This cast is safe since a copy will be made
     T *storagefake = const_cast<T*>(storage);
-    Alloc alloc;
+    Alloc alloc(static_cast<Alloc&>(*data_p));
     takeStorage(shape, storagefake, COPY, alloc);
 }
 
@@ -1089,13 +1071,13 @@ void Array<T, Alloc>::takeStorage(const IPosition &shape, const T *storage,
 template<class T, typename Alloc>
 std::unique_ptr<ArrayPositionIterator> Array<T, Alloc>::makeIterator (size_t byDim) const
 {
-    return std::unique_ptr<ArrayPositionIterator>( new ArrayIterator<T> (*this, byDim) );
+    return std::unique_ptr<ArrayPositionIterator>( new ArrayIterator<T, Alloc> (*this, byDim) );
 }
 
 
 
 template<class T, typename Alloc>
-Array<T, Alloc>::BaseIteratorSTL::BaseIteratorSTL (const Array<T>& arr)
+Array<T, Alloc>::BaseIteratorSTL::BaseIteratorSTL (const Array<T, Alloc>& arr)
 : itsLineIncr (0),
   itsCurPos   (arr.ndim(), 0),
   itsArray    (&arr),

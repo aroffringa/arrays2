@@ -26,15 +26,15 @@
 //#
 //# $Id$
 
-#include <casacore/casa/Arrays/ExtendSpecifier.h>
-#include <casacore/casa/Arrays/Slicer.h>
-#include <casacore/casa/Containers/Block.h>
-#include <casacore/casa/Utilities/Assert.h>
-#include <casacore/casa/Exceptions/Error.h>
+#include "ExtendSpecifier.h"
+#include "Slicer.h"
+#include "ArrayError.h"
 
+#include <cassert>
 
 namespace casacore { //# NAMESPACE CASACORE - BEGIN
-
+namespace array2 {
+  
 ExtendSpecifier::ExtendSpecifier()
 {}
 
@@ -49,8 +49,9 @@ ExtendSpecifier::ExtendSpecifier (const IPosition& oldShape,
 {
   size_t nrdim = newShape.nelements();
   // Check if axes are given correctly.
-  Block<bool> flags(nrdim, false);
-  fill (flags, newAxes);
+  std::unique_ptr<bool[]> flags(new bool[nrdim]);
+  std::fill_n(flags.get(), nrdim, false);
+  fill (flags.get(), nrdim, newAxes);
   // Make the mapping of new axes to old axes.
   IPosition newToOld(nrdim, -1);
   size_t nrold = 0;
@@ -59,19 +60,19 @@ ExtendSpecifier::ExtendSpecifier (const IPosition& oldShape,
       newToOld(i) = nrold++;
     }
   }
-  fill (flags, stretchAxes);
+  fill (flags.get(), nrdim, stretchAxes);
   // Find the axes which are new nor stretched.
   size_t nrext = newAxes.nelements();
   if (nrdim - nrext != oldShape.nelements()) {
-    throw AipsError ("ExtendSpecifier - "
+    throw ArrayError ("ExtendSpecifier - "
 		     "#axes in oldShape,newShape,newAxes mismatch");
   }
   nrext += stretchAxes.nelements();
   if (nrext == 0) {
-    throw AipsError ("ExtendSpecifier - new nor stretch axes given");
+    throw ArrayError ("ExtendSpecifier - new nor stretch axes given");
   }
   if (nrext >= nrdim) {
-    throw AipsError ("ExtendSpecifier - no axes remaining");
+    throw ArrayError ("ExtendSpecifier - no axes remaining");
   }
   itsExtendAxes.resize (nrext);
   itsOldOldAxes.resize (nrdim - nrext);
@@ -84,14 +85,14 @@ ExtendSpecifier::ExtendSpecifier (const IPosition& oldShape,
   for (size_t i=0; i<nrdim; i++) {
     if (flags[i]) {
       if (newToOld(i) >= 0  &&  oldShape(newToOld(i)) != 1) {
-	throw AipsError ("ExtendSpecifier - length of stretched axis > 1");
+	throw ArrayError ("ExtendSpecifier - length of stretched axis > 1");
       }
       itsExtendAxes(nrext++) = i;
     } else {
       itsOldOldAxes(nrold) = newToOld(i);
       itsOldNewAxes(nrold++) = i;
       if (newShape(i) != oldShape(newToOld(i))) {
-	throw AipsError ("ExtendSpecifier - lengths of old axis mismatch");
+	throw ArrayError ("ExtendSpecifier - lengths of old axis mismatch");
       }
     }
   }
@@ -132,16 +133,15 @@ ExtendSpecifier& ExtendSpecifier::operator= (const ExtendSpecifier& other)
   return *this;
 }
 
-void ExtendSpecifier::fill (Block<bool>& flags, const IPosition& axes) const
+void ExtendSpecifier::fill (bool* flags, size_t nrdim, const IPosition& axes) const
 {
-  int nrdim = flags.nelements();
   for (size_t i=0; i<axes.nelements(); i++) {
-    int axis = axes(i);
-    if (axis < 0  ||  axis >= nrdim) {
-      throw AipsError ("ExtendSpecifier - invalid axis given (<0 or >=nrdim)");
+    ssize_t axis = axes(i);
+    if (axis < 0  ||  axis >= ssize_t(nrdim)) {
+      throw ArrayError ("ExtendSpecifier - invalid axis given (<0 or >=nrdim)");
     }
     if (flags[axis]) {
-      throw AipsError ("ExtendSpecifier - axis multiply specified");
+      throw ArrayError ("ExtendSpecifier - axis multiply specified");
     }
     flags[axis] = true;
   }
@@ -150,7 +150,7 @@ void ExtendSpecifier::fill (Block<bool>& flags, const IPosition& axes) const
 Slicer ExtendSpecifier::convert (IPosition& shape, const Slicer& section) const
 {
   size_t nrdim = itsNewShape.nelements();
-  DebugAssert (nrdim == section.ndim(), AipsError);
+  assert (nrdim == section.ndim());
   size_t nrr = nrdim - itsNewAxes.nelements();
   size_t nrold = itsOldOldAxes.nelements();
   // Create a Slicer for the section without the new axes.
@@ -181,5 +181,5 @@ IPosition ExtendSpecifier::convertNew (const IPosition& shape) const
   return newShape;
 }
 
-} //# NAMESPACE CASACORE - END
+} } //# NAMESPACE CASACORE - END
 

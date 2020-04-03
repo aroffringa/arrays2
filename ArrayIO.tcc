@@ -702,6 +702,13 @@ bool readArrayBlock(istream &s, bool &trans,
   return how;
 }
 
+template<typename T, typename Alloc>
+std::string to_string(const Array<T, Alloc> array)
+{
+  std::ostringstream str;
+  str << array;
+  return str.str();
+}
 
 } } //# NAMESPACE CASACORE - END
 

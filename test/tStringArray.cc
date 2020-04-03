@@ -34,8 +34,6 @@
 #include "../Cube.h"
 #include "../ArrayError.h"
 
-#include <casacore/casa/BasicMath/Math.h>
-
 #include <string>
 
 #include <boost/test/unit_test.hpp>

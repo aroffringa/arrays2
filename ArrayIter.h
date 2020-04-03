@@ -69,12 +69,12 @@ namespace array2 {
 //    <here>ArrayIterator</here> -- Iterate an Array cursor through another Array.
 // </linkfrom>
 //
-template<class T> class ArrayIterator : public ArrayPositionIterator
+template<typename T, typename Alloc> class ArrayIterator : public ArrayPositionIterator
 {
 public:
     // Step through array "arr" over the first byDim axes
     // (using a cursor of dimensionality "byDim").
-    explicit ArrayIterator(const Array<T> &arr, size_t byDim=1);
+    explicit ArrayIterator(const Array<T, Alloc> &arr, size_t byDim=1);
 
     // Step through an array using the given axes.
     // The axes can be given in two ways:
@@ -89,7 +89,7 @@ public:
     // iteration step returns a cursor (containing the data of axis 1).
     // During the iteration axis 2 will vary most rapidly (as it was
     // given first).
-    ArrayIterator(const Array<T> &arr, const IPosition &axes,
+    ArrayIterator(const Array<T, Alloc> &arr, const IPosition &axes,
 		  bool axesAreCursor = true);
 
     virtual ~ArrayIterator();
@@ -115,29 +115,29 @@ public:
     // Return the cursor. (Perhaps we should have a fn() that returns a
     // reference to the original array as well?)
     // <group>
-    Array<T> &array() {return *ap_p;}
+    Array<T, Alloc> &array() {return *ap_p;}
     virtual ArrayBase& getArray() override;
     // </group>
 
 
 protected:
     // A pointer to the cursor.
-    Array<T>* ap_p;
+    Array<T, Alloc>* ap_p;
 
 private:
     // helper function to centralize construction work
-    void init(const Array<T> &);
+    void init(const Array<T, Alloc> &);
     // helper function to set the pointer to the new data position in ap
     // after a step in the given dimension. -1 resets it to the beginning.
     void apSetPointer(int stepDim);
 
-    Array<T> pOriginalArray_p;
+    Array<T, Alloc> pOriginalArray_p;
     IPosition offset_p;
     T* dataPtr_p;
 
     //# Presently the following are not defined.
-    ArrayIterator(const ArrayIterator<T> &);
-    ArrayIterator<T> &operator=(const ArrayIterator<T> &);
+    ArrayIterator(const ArrayIterator<T, Alloc> &);
+    ArrayIterator<T, Alloc> &operator=(const ArrayIterator<T, Alloc> &);
 };
 
 // 
@@ -171,17 +171,17 @@ private:
 //     a const Array.
 // </linkfrom>
 //
-template<class T> class ReadOnlyArrayIterator
+template<typename T, typename Alloc=std::allocator<T>> class ReadOnlyArrayIterator
 {
 public:
     // Step through array "arr" using a cursor of dimensionality "byDim".
-    explicit ReadOnlyArrayIterator(const Array<T> &arr, size_t byDim=1) 
-	: ai(const_cast<Array<T>&>(arr),byDim) {}
+    explicit ReadOnlyArrayIterator(const Array<T, Alloc> &arr, size_t byDim=1) 
+	: ai(const_cast<Array<T, Alloc>&>(arr),byDim) {}
 
     // Step through an array for the given iteration axes.
-  ReadOnlyArrayIterator(const Array<T> &arr, const IPosition &axes,
+  ReadOnlyArrayIterator(const Array<T, Alloc> &arr, const IPosition &axes,
 			bool axesAreCursor = true)
-	: ai(const_cast<Array<T>&>(arr),axes,axesAreCursor) {}
+	: ai(const_cast<Array<T, Alloc>&>(arr),axes,axesAreCursor) {}
 
     // Move the cursor to the next position.
     void next() {ai.next();}
@@ -204,7 +204,7 @@ public:
     
     // Return the cursor. (Perhaps we should have a fn() that returns a
     // reference to the original array as well?)
-    const Array<T> &array() {return ai.array();}
+    const Array<T, Alloc> &array() {return ai.array();}
 	
     // The same as the functions in ArrayPositionIterator.
     // <group>
@@ -217,11 +217,11 @@ public:
 private:
     // Not implemented.
     // <group>
-    ReadOnlyArrayIterator (const ReadOnlyArrayIterator<T> &);
-    ReadOnlyArrayIterator<T> &operator=(const ReadOnlyArrayIterator<T> &);
+    ReadOnlyArrayIterator (const ReadOnlyArrayIterator<T, Alloc> &);
+    ReadOnlyArrayIterator<T, Alloc> &operator=(const ReadOnlyArrayIterator<T, Alloc> &);
     // </group>
     
-    ArrayIterator<T> ai;
+    ArrayIterator<T, Alloc> ai;
 };
 
 

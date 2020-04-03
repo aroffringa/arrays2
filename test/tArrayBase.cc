@@ -30,16 +30,6 @@
 
 #include <boost/test/unit_test.hpp>
 
-/*
-#include <casacore/casa/iostream.h>
-
-#include <casacore/casa/aips.h>
-
-#include "../Vector.h"
-#include "../ArrayError.h"
-
-#include <casacore/casa/namespace.h>
-*/
 #include "../Array.h"
 #include "../ArrayBase.h"
 #include "../ArrayMath.h"

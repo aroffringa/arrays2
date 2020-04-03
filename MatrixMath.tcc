@@ -129,7 +129,7 @@ Matrix<T> product (const Vector<T> &x, const Matrix<T> &yT) {
     throw (ArrayError("product - multiplication of" 
                                     " these matrices shapes is undefined"));
   Matrix<T> A(x.nelements(),1u);
-  A.column(0) = x;
+  A.column(0).assign_conforming( x );
 
   return product(A,yT);
 }
